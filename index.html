@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyCast - Forecast At Your Fingertips.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="manifest"
+        href="data:application/json;base64,eyJuYW1lIjoiV2VhdGhlclBybyIsInNob3J0X25hbWUiOiJXZWF0aGVyUHJvIiwic3RhcnRfdXJsIjoiLyIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiNmZmZmZmYiLCJ0aGVtZV9jb2xvciI6IiMzYjgyZjYiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCM2FXUjBhRDBpTWpRaUlHaGxhV2RvZEQwaU1qUWlJSFpsY25OcGIyNDlJakV1TVNJZ2VHMXNibk05SW1oMGRIQTZMeTkzZDNjdVp6TXViM0puTHpJd01EQXZjM1puSWo0OGNHRjBhQ0JrUFNKTk1USWdNa00yTGpVeU5pQXlJRElnTmk0MU1qWmhOVEFnTlRBZ01DQXhNREFnTVRBZ01UQmFUVEl5SURFeVl6QWdNaTAzSURBZ05DMDNJRGQyTkdFM0lEY2dNQ0F3SURBZ01UWWdNSG9pSUdacGJHdzlJaU16WWpneVpqWWlMejQ4TDNOMlp6ND0iLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCIsInNpemVzIjoiMjR4MjQifV19">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body style="background-color: var(--bg-primary); color: var(--text-primary); transition: all 0.3s ease;"
+    class="weather-sunny">
+
+    <!-- Weather Animation Overlay -->
+    <div id="weather-animation" class="fixed inset-0 pointer-events-none z-0"></div>
+
+    <!-- Header -->
+    <header class="glass m-4 p-4">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center">
+                        <img src="A clean and modern logo for a weather app called SkyCast, featuring a stylized cloud and sun icon in shades of light blue and white, set against a simple, bright background. The overall aesthetic is crisp, airy, and professional, evoking a sense of c.jpg"
+                            alt="icon" class="w-10 h-10 rounded-lg">
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold" style="color: var(--text-primary);">SkyCast</h1>
+                        <p class="text-sm" style="color: var(--text-secondary);">Forecast At Your Fingertips.</p>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Controls -->
+            <div class="flex items-center space-x-3">
+                <!-- Unit Toggle -->
+                <div class="hidden md:flex items-center space-x-1 p-1 rounded-lg glass">
+                    <button id="unit-c" class="unit-btn px-3 py-1 rounded text-sm font-medium transition-all"
+                        style="background-color: var(--primary-blue); color: var(--text-white);">°C</button>
+                    <button id="unit-f" class="unit-btn px-3 py-1 rounded text-sm font-medium transition-all"
+                        style="color: var(--text-white);">°F</button>
+                    <button id="unit-k" class="unit-btn px-3 py-1 rounded text-sm font-medium transition-all"
+                        style="color: var(--text-white);">K</button>
+                </div>
+
+                <!-- Dark Mode Toggle -->
+                <button id="theme-toggle" class="p-2 rounded-lg glass btn-hover">
+                    <span id="theme-icon" class="text-xl">🌙</span>
+                </button>
+
+                <!-- Settings -->
+                <button id="settings-btn" class="p-2 rounded-lg glass btn-hover">
+                    <span class="text-xl">⚙️</span>
+                </button>
+            </div>
+        </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="relative z-10 max-w-7xl mx-auto px-4 py-6">
+
+        <!-- Search Section -->
+        <div class="mb-8">
+            <div class="max-w-2xl mx-auto">
+                <div class="relative">
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <input type="text" id="city-search"
+                            class="w-full px-6 py-4 pr-24 rounded-2xl text-lg font-medium glass focus:ring-4 focus:ring-opacity-50 transition-all"
+                            style="color: var(--text-white); --tw-ring-color: var(--primary-blue);"
+                            placeholder="Search for a city...">
+
+                        <!-- Voice Search Button -->
+                        <button id="voice-search"
+                            class="absolute right-14 top-1/2 transform -translate-y-1/2 p-2 rounded-lg glass btn-hover">
+                            <span class="text-xl">🎙️</span>
+                        </button>
+
+                        <!-- Location Button -->
+                        <button id="location-btn"
+                            class="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-lg glass btn-hover">
+                            <span class="text-xl">📍</span>
+                        </button>
+                    </div>
+
+                    <!-- Search Suggestions -->
+                    <div id="search-suggestions"
+                        class="absolute top-full left-0 right-0 mt-2 glass rounded-xl shadow-xl hidden max-h-60 overflow-y-auto custom-scrollbar">
+                        <!-- Suggestions will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weather Alerts -->
+        <div id="weather-alerts" class="mb-6 hidden">
+            <!-- Alerts will be populated here -->
+        </div>
+
+        <!-- Current Weather -->
+        <div id="current-weather" class="mb-8 hidden">
+            <div class="weather-card glass rounded-3xl p-8 fade-in">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                    <!-- Main Weather Info -->
+                    <div class="text-center lg:text-left">
+                        <div class="flex items-center justify-center lg:justify-start mb-4">
+                            <div id="weather-icon" class="text-8xl mr-4 bounce">🌤️</div>
+                            <div>
+                                <h2 id="city-name" class="text-3xl font-bold mb-2" style="color: var(--text-white);">
+                                    Loading...</h2>
+                                <p id="weather-description" class="text-xl capitalize"
+                                    style="color: rgba(255, 255, 255, 0.8);">Loading...</p>
+                            </div>
+                        </div>
+
+                        <div class="text-center lg:text-left">
+                            <div id="temperature" class="text-6xl font-bold mb-2" style="color: var(--text-white);">--°
+                            </div>
+                            <div class="flex items-center justify-center lg:justify-start space-x-4 text-sm"
+                                style="color: rgba(255, 255, 255, 0.8);">
+                                <span>Feels like <span id="feels-like">--°</span></span>
+                                <span>•</span>
+                                <span id="last-updated">Just now</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Weather Details -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="glass rounded-xl p-4 text-center">
+                            <div class="text-2xl mb-2">💨</div>
+                            <div class="text-sm" style="color: rgba(255, 255, 255, 0.8);">Wind Speed</div>
+                            <div id="wind-speed" class="text-xl font-bold" style="color: var(--text-white);">-- km/h
+                            </div>
+                        </div>
+
+                        <div class="glass rounded-xl p-4 text-center">
+                            <div class="text-2xl mb-2">💧</div>
+                            <div class="text-sm" style="color: rgba(255, 255, 255, 0.8);">Humidity</div>
+                            <div id="humidity" class="text-xl font-bold" style="color: var(--text-white);">--%</div>
+                        </div>
+
+                        <div class="glass rounded-xl p-4 text-center">
+                            <div class="text-2xl mb-2">👁️</div>
+                            <div class="text-sm" style="color: rgba(255, 255, 255, 0.8);">Visibility</div>
+                            <div id="visibility" class="text-xl font-bold" style="color: var(--text-white);">-- km</div>
+                        </div>
+
+                        <div class="glass rounded-xl p-4 text-center">
+                            <div class="text-2xl mb-2">🌡️</div>
+                            <div class="text-sm" style="color: rgba(255, 255, 255, 0.8);">Pressure</div>
+                            <div id="pressure" class="text-xl font-bold" style="color: var(--text-white);">-- hPa</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Weather Info -->
+        <div id="additional-info" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 hidden">
+            <!-- UV Index -->
+            <div class="glass rounded-xl p-6 text-center weather-card">
+                <div class="text-3xl mb-3">☀️</div>
+                <h3 class="font-semibold mb-2" style="color: var(--text-white);">UV Index</h3>
+                <div id="uv-index" class="text-2xl font-bold" style="color: var(--text-white);">--</div>
+                <div id="uv-level" class="text-sm mt-1" style="color: rgba(255, 255, 255, 0.8);">--</div>
+            </div>
+
+            <!-- Air Quality -->
+            <div class="glass rounded-xl p-6 text-center weather-card">
+                <div class="text-3xl mb-3">🌬️</div>
+                <h3 class="font-semibold mb-2" style="color: var(--text-white);">Air Quality</h3>
+                <div id="air-quality" class="text-2xl font-bold" style="color: var(--text-white);">--</div>
+                <div id="air-quality-desc" class="text-sm mt-1" style="color: rgba(255, 255, 255, 0.8);">--</div>
+            </div>
+
+            <!-- Sunrise/Sunset -->
+            <div class="glass rounded-xl p-6 text-center weather-card">
+                <div class="text-3xl mb-3">🌅</div>
+                <h3 class="font-semibold mb-2" style="color: var(--text-white);">Sunrise</h3>
+                <div id="sunrise" class="text-lg font-bold" style="color: var(--text-white);">--:--</div>
+                <div class="text-3xl mt-2 mb-1">🌇</div>
+                <div id="sunset" class="text-lg font-bold" style="color: var(--text-white);">--:--</div>
+            </div>
+
+            <!-- Moon Phase -->
+            <div class="glass rounded-xl p-6 text-center weather-card">
+                <div id="moon-icon" class="text-3xl mb-3">🌙</div>
+                <h3 class="font-semibold mb-2" style="color: var(--text-white);">Moon Phase</h3>
+                <div id="moon-phase" class="text-lg font-bold" style="color: var(--text-white);">--</div>
+            </div>
+        </div>
+
+        <!-- Hourly Forecast -->
+        <div id="hourly-forecast" class="mb-8 hidden">
+            <div class="glass rounded-3xl p-6">
+                <h3 class="text-xl font-bold mb-4 flex items-center" style="color: var(--text-white);">
+                    <span class="mr-2">📊</span> 24-Hour Forecast
+                </h3>
+                <div class="chart-container">
+                    <canvas id="hourly-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7-Day Forecast -->
+        <div id="weekly-forecast" class="mb-8 hidden">
+            <div class="glass rounded-3xl p-6">
+                <h3 class="text-xl font-bold mb-6 flex items-center" style="color: var(--text-white);">
+                    <span class="mr-2">📅</span> 7-Day Forecast
+                </h3>
+                <div id="forecast-container" class="space-y-3">
+                    <!-- Forecast items will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Weather Map -->
+        <div id="weather-map-section" class="mb-8 hidden">
+            <div class="glass rounded-3xl p-6">
+                <h3 class="text-xl font-bold mb-4 flex items-center" style="color: var(--text-white);">
+                    <span class="mr-2">🗺️</span> Weather Map
+                </h3>
+                <div id="weather-map" class="map-container"></div>
+            </div>
+        </div>
+
+        <!-- Favorite Cities -->
+        <div id="favorites-section" class="mb-8">
+            <div class="glass rounded-3xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold flex items-center" style="color: var(--text-white);">
+                        <span class="mr-2">⭐</span> Favorite Cities
+                    </h3>
+                    <button id="add-favorite" class="px-4 py-2 rounded-lg btn-hover"
+                        style="background-color: var(--primary-blue); color: var(--text-white);">
+                        Add Current City
+                    </button>
+                </div>
+                <div id="favorites-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Favorite cities will be populated here -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="glass rounded-xl p-8 text-center">
+            <div class="spinner mx-auto mb-4"></div>
+            <p style="color: var(--text-white);">Loading weather data...</p>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeSettingsModal()"></div>
+        <div class="relative flex items-center justify-center min-h-screen p-4">
+            <div class="w-full max-w-md glass rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold" style="color: var(--text-white);">Settings</h3>
+                    <button onclick="closeSettingsModal()" class="text-2xl" style="color: var(--text-white);">×</button>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Auto-location -->
+                    <div class="flex items-center justify-between">
+                        <span style="color: var(--text-white);">Auto-detect location</span>
+                        <input type="checkbox" id="auto-location" class="toggle">
+                    </div>
+
+                    <!-- Notifications -->
+                    <div class="flex items-center justify-between">
+                        <span style="color: var(--text-white);">Weather alerts</span>
+                        <input type="checkbox" id="weather-notifications" class="toggle">
+                    </div>
+
+                    <!-- Update interval -->
+                    <div>
+                        <label class="block mb-2" style="color: var(--text-white);">Update interval</label>
+                        <select id="update-interval" class="w-full p-2 rounded-lg glass"
+                            style="color: var(--text-white);">
+                            <option value="5">5 minutes</option>
+                            <option value="10" selected>10 minutes</option>
+                            <option value="30">30 minutes</option>
+                            <option value="60">1 hour</option>
+                        </select>
+                    </div>
+
+                    <!-- Clear cache -->
+                    <button id="clear-cache" class="w-full py-2 px-4 rounded-lg btn-hover"
+                        style="background-color: var(--danger-color); color: var(--text-white);">
+                        Clear Cache
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'97a5c890245b2fe1',t:'MTc1NzA3NTkwNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
+</body>
+
+</html>
